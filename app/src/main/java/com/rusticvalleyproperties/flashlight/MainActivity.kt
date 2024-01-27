@@ -76,21 +76,22 @@ class MainActivity : AppCompatActivity() {
                         }
 
                     }
-
                     override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
                     override fun onStopTrackingTouch(seekBar: SeekBar?) {}
                 })
             }else {
-                flashlightIntensity.isVisible = false
-                cameraPower.isVisible = false
-                tvIntensityText.isVisible = false
+                hideAdjustments()
+
             }
         }else {
-            flashlightIntensity.isVisible = false
-            cameraPower.isVisible = false
-            tvIntensityText.isVisible = false
+            hideAdjustments()
         }
+    }
+
+    private fun hideAdjustments() {
+        flashlightIntensity.isVisible = false
+        cameraPower.isVisible = false
+        tvIntensityText.isVisible = false
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
