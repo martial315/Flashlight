@@ -35,14 +35,13 @@ class MainActivity : AppCompatActivity() {
         /**set view Id*/
         powerBtn = findViewById(R.id.powerBtn)
         cameraM = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        powerBtn.setOnClickListener { flashlightOnOrOff(it) }
         cameraPower = findViewById(R.id.tvIntensityLevel)
         tvIntensityText = findViewById(R.id.tvIntensityText)
         flashlightIntensity = findViewById(R.id.tvLightIntensity)
         tvWarn = findViewById(R.id.tvWarning)
         tvWarn.isVisible = false
 
-
+        powerBtn.setOnClickListener { flashlightOnOrOff(it) }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intensityPossible = findIntensity()
@@ -60,9 +59,11 @@ class MainActivity : AppCompatActivity() {
                 flashlightIntensity.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                     override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean
                     ) {
-                        Log.i(TAG, "on progress changed $progress")
+                        /**Changes power icon to "on" when seekbar change occurs*/
+                        powerBtn.setImageResource(R.drawable.power_on)
+                        textMessage("Flashlight is On", this)
+                        isflash = true
                         cameraPower.text = "$progress"
-                        Log.i(TAG, "Max strength level: $maxlevel, $defaultLevel")
                         if(maxlevel!! >= progress) {
                             cameraM.turnOnTorchWithStrengthLevel(cameraListId, progress)
                             if(progress > defaultLevel) {
