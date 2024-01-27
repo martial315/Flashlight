@@ -45,10 +45,62 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="32dp"
             android:text="Created by Jesse Spangler"
+            android:fontFamily="sans-serif-smallcaps"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
+
+        <SeekBar
+            android:id="@+id/tvLightIntensity"
+            android:layout_width="256dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:indeterminate="false"
+            android:max="10"
+            android:min="1"
+            android:progress="1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/powerBtn" />
+
+        <TextView
+            android:id="@+id/tvIntensityText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:fontFamily="sans-serif-smallcaps"
+            android:text="Flashligh Intensity Level:"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvLightIntensity" />
+
+        <TextView
+            android:id="@+id/tvIntensityLevel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:fontFamily="sans-serif-smallcaps"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvIntensityText"
+            tools:text="1" />
+
+        <TextView
+            android:id="@+id/tvWarning"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="100dp"
+            android:fontFamily="sans-serif-smallcaps"
+            android:foregroundGravity="center"
+            android:gravity="center"
+            android:text="Warning! prolonged use can cause battery drainage and low temp skin burns when in prolonged contact with the skin. Avoid leaving flashlight turned on for an extended period"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvIntensityLevel" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
