@@ -6,7 +6,6 @@ import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.ImageButton
 import android.widget.SeekBar
@@ -35,14 +34,13 @@ class MainActivity : AppCompatActivity() {
         /**set view Id*/
         powerBtn = findViewById(R.id.powerBtn)
         cameraM = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        powerBtn.setOnClickListener { flashlightOnOrOff(it) }
         cameraPower = findViewById(R.id.tvIntensityLevel)
         tvIntensityText = findViewById(R.id.tvIntensityText)
         flashlightIntensity = findViewById(R.id.tvLightIntensity)
         tvWarn = findViewById(R.id.tvWarning)
         tvWarn.isVisible = false
 
-
+        powerBtn.setOnClickListener { flashlightOnOrOff(it) }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intensityPossible = findIntensity()
@@ -60,19 +58,21 @@ class MainActivity : AppCompatActivity() {
                 flashlightIntensity.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                     override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean
                     ) {
-                        Log.i(TAG, "on progress changed $progress")
                         cameraPower.text = "$progress"
-                        Log.i(TAG, "Max strength level: $maxlevel, $defaultLevel")
-                        if(maxlevel!! >= progress) {
-                            cameraM.turnOnTorchWithStrengthLevel(cameraListId, progress)
-                            if(progress > defaultLevel) {
-                                tvWarn.isVisible = true
-                            }else {
-                                tvWarn.isVisible = false
+                        /**Changes power icon to "on" when seekbar change occurs*/
+                        if(!isFlash) {
+                            val cameraListId = cameraM.cameraIdList[0]
+                            cameraM.setTorchMode(cameraListId, false)
+                            lightWarn(progress, defaultLevel)
+                        }else if(isFlash) {
+                            cameraPower.text = "$progress"
+                            if (maxlevel!! >= progress) {
+                                cameraM.turnOnTorchWithStrengthLevel(cameraListId, progress)
+                                lightWarn(progress, defaultLevel)
+                            } else {
+                                cameraM.turnOnTorchWithStrengthLevel(cameraListId, maxlevel)
+                                lightWarn(progress, defaultLevel)
                             }
-                        }else {
-                            cameraM.turnOnTorchWithStrengthLevel(cameraListId, maxlevel)
-                            tvWarn.isVisible = true
                         }
 
                     }
@@ -86,6 +86,15 @@ class MainActivity : AppCompatActivity() {
         }else {
             hideAdjustments()
         }
+    }
+
+    private fun lightWarn(progress: Int, defaultLevel: Int) {
+        if (progress > defaultLevel) {
+            tvWarn.isVisible = true
+        } else {
+            tvWarn.isVisible = false
+        }
+
     }
 
     private fun hideAdjustments() {
