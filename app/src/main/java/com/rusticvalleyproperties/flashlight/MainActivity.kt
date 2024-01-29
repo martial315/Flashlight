@@ -15,7 +15,9 @@ import androidx.annotation.RequiresApi
 import java.lang.IllegalArgumentException
 import androidx.core.view.isVisible
 
-private const val TAG = "MainActivity"
+
+//add comment to code if debugging
+//private const val TAG = "MainActivity"
 class MainActivity : AppCompatActivity() {
 
     private lateinit var cameraM:CameraManager
@@ -24,30 +26,35 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cameraPower : TextView
     private lateinit var tvIntensityText : TextView
     private lateinit var tvWarn : TextView
-    var isFlash = false
-    var intensityPossible = false
+    private var isFlash = false
+    private var intensityPossible = false
+    private var helpProgress : Int = 1
+    private var helpDefaultLevel : Int = 0
+    private var helpMaxLvl : Int = 0
+    var cameraFlashId :String = ""
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         /**set view Id*/
         powerBtn = findViewById(R.id.powerBtn)
-        cameraM = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        cameraM = getSystemService(CAMERA_SERVICE) as CameraManager
         cameraPower = findViewById(R.id.tvIntensityLevel)
         tvIntensityText = findViewById(R.id.tvIntensityText)
         flashlightIntensity = findViewById(R.id.tvLightIntensity)
         tvWarn = findViewById(R.id.tvWarning)
         tvWarn.isVisible = false
 
-        powerBtn.setOnClickListener { flashlightOnOrOff(it) }
+        cameraFlashId = findFlash()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intensityPossible = findIntensity()
+            intensityPossible = findIntensity(cameraFlashId)
+
 
             if (intensityPossible){
-                val cameraListId = cameraM.cameraIdList[0]
-                val cameraC = cameraM.getCameraCharacteristics(cameraListId)
+                val cameraC = cameraM.getCameraCharacteristics(cameraFlashId)
                 val defaultLevel = cameraC.get(CameraCharacteristics.FLASH_INFO_STRENGTH_DEFAULT_LEVEL)!!
                 val maxlevel = cameraC.get(CameraCharacteristics.FLASH_INFO_STRENGTH_MAXIMUM_LEVEL)
                 cameraPower.text = defaultLevel.toString()
@@ -58,55 +65,65 @@ class MainActivity : AppCompatActivity() {
                 flashlightIntensity.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                     override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean
                     ) {
-                        cameraPower.text = "$progress"
-                        /**Changes power icon to "on" when seekbar change occurs*/
-                        if(!isFlash) {
-                            val cameraListId = cameraM.cameraIdList[0]
-                            cameraM.setTorchMode(cameraListId, false)
-                            lightWarn(progress, defaultLevel)
-                        }else if(isFlash) {
-                            cameraPower.text = "$progress"
-                            if (maxlevel!! >= progress) {
-                                cameraM.turnOnTorchWithStrengthLevel(cameraListId, progress)
-                                lightWarn(progress, defaultLevel)
-                            } else {
-                                cameraM.turnOnTorchWithStrengthLevel(cameraListId, maxlevel)
-                                lightWarn(progress, defaultLevel)
-                            }
-                        }
+                        helpProgress = progress
+                        helpDefaultLevel = defaultLevel
+                        helpMaxLvl = maxlevel!!
 
+                        if(isFlash) {
+                            changeIntensity(seekBar, cameraFlashId)
+                        }
+                        lightWarn(helpProgress, helpDefaultLevel)
+                        cameraPower.text = "$helpProgress"
                     }
                     override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-                    override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+                    override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                    }
                 })
-            }else {
-                hideAdjustments()
-
             }
-        }else {
+            else {
+                hideAdjustments()
+            }
+        }
+        else {
             hideAdjustments()
         }
+
+        powerBtn.setOnClickListener { flashlightOnOrOff(it, cameraFlashId) }
     }
 
+    private fun findFlash(): String {
+        for(camera in cameraM.cameraIdList) {
+            var cameraC = cameraM.getCameraCharacteristics(camera)
+            var flash = cameraC.get(CameraCharacteristics.FLASH_INFO_AVAILABLE)
+            if (flash != null && flash)
+                return camera
+        }
+        return "neg"
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun changeIntensity(v: View?, cameraFlashId: String) {
+                cameraM.turnOnTorchWithStrengthLevel(cameraFlashId, helpProgress)
+                lightWarn(helpProgress, helpDefaultLevel)
+                cameraPower.text = "$helpProgress"
+    }
     private fun lightWarn(progress: Int, defaultLevel: Int) {
         if (progress > defaultLevel) {
             tvWarn.isVisible = true
-        } else {
+        }
+        else {
             tvWarn.isVisible = false
         }
-
     }
-
     private fun hideAdjustments() {
         flashlightIntensity.isVisible = false
         cameraPower.isVisible = false
         tvIntensityText.isVisible = false
     }
-
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun findIntensity(): Boolean {
-        val cameraListId = cameraM.cameraIdList[0]
-        val cameraC = cameraM.getCameraCharacteristics(cameraListId)
+    private fun findIntensity(cameraFlashId : String): Boolean {
+        val cameraC = cameraM.getCameraCharacteristics(cameraFlashId)
         val maxlevel = cameraC.get(CameraCharacteristics.FLASH_INFO_STRENGTH_MAXIMUM_LEVEL)
         if (maxlevel != null) {
             if(maxlevel > 1) {
@@ -121,34 +138,40 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
-
-    private fun flashlightOnOrOff(v: View?) {
-        try {
-            if (!isFlash) {
-                val cameraListId = cameraM.cameraIdList[0]
-                cameraM.setTorchMode(cameraListId, true)
-                isFlash = true
-                powerBtn.setImageResource(R.drawable.power_on)
-                textMessage("Flashlight is On", this)
-            } else {
-                val cameraListId = cameraM.cameraIdList[0]
-                cameraM.setTorchMode(cameraListId, false)
-                isFlash = false
-                powerBtn.setImageResource(R.drawable.power_off)
-                textMessage("Flashlight is Off", this)
+    private fun flashlightOnOrOff(v: View?, cameraFlashId: String) {
+            try {
+                if (!isFlash) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        cameraM.turnOnTorchWithStrengthLevel(cameraFlashId, helpProgress)
+                        isFlash = true
+                        powerBtn.setImageResource(R.drawable.power_on)
+                        textMessage("Flashlight is On", this)
+                    }
+                    else {
+                        cameraM.setTorchMode(cameraFlashId, true)
+                        isFlash = true
+                        powerBtn.setImageResource(R.drawable.power_on)
+                        textMessage("Flashlight is On", this)
+                    }
+                } else {
+                    cameraM.setTorchMode(cameraFlashId, false)
+                    isFlash = false
+                    powerBtn.setImageResource(R.drawable.power_off)
+                    textMessage("Flashlight is Off", this)
+                }
+            } catch (e: IllegalArgumentException) {
+                textMessage("No valid camera. Please see support", this)
+                //Log.i(TAG, "Camera ID: $cameraFlashId")
             }
         }
-        catch (e: IllegalArgumentException) {
-            textMessage("No valid camera. Please see support", this)
-        }
-    }
-
-    override fun finish() {
-        super.finish()
+    override fun onStop() {
+        super.onStop()
         try {
             // true sets the torch in OFF mode
-            val cameraListId = cameraM.cameraIdList[0]
+            val cameraListId = cameraFlashId
             cameraM.setTorchMode(cameraListId, false)
+            isFlash = false
+            powerBtn.setImageResource(R.drawable.power_off)
             textMessage("Flashlight is Off", this)
         }
         catch (e: IllegalArgumentException) {
